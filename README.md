@@ -55,10 +55,6 @@ git clone https://github.com/Granddyser/wan-video-extender.git
 pip install requirements.txt
 ```
 
-2. **Restart ComfyUI**
-
-3. **Find the node** in: `Add Node > WanCustom > Wan 2.2 Video Extender PRO`
-
 ---
 
 ## 🎯 Quick Start
