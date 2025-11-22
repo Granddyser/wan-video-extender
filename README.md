@@ -94,6 +94,17 @@ Settings:
   - positive_prompt: "your scene description"
 ```
 
+
+
+## ⚠️ Resolution Handling
+
+**Important**: The `default_width` and `default_height` parameters are **only used for T2V (Text-to-Video)** generation when no input image is provided.
+
+When using **I2V (Image-to-Video)** or providing any image input:
+- The node **automatically uses the resolution of the input image**
+- `default_width` and `default_height` are **ignored**
+- **Make sure your input images are already at the desired resolution** before feeding them to the node
+
 ---
 
 ## 🎓 Understanding Overlap
