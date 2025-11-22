@@ -26,8 +26,9 @@ class WanVideoExtenderNative:
                 # MAIN PROMPTS
                 "positive_prompt": ("STRING", {
                     "multiline": True,
-                    "default": "a woman running in the forest",
-                    "tooltip": "Haupt-Prompt / Basis-Prompt für alle Loops (Fallback)."
+                    "default": " ",
+                    "placeholder": "Main prompt for a single run, image-to-video, or video extension input. If using more than two connections, select the loop input for the string and leave this field empty. Keep it short, this is only a basic template.",
+                    "tooltip": "Main-Prompt / Basis-Prompt for all Loops (Fallback)."
                 }),
                 "negative_prompt": ("STRING", {
                     "multiline": True,
@@ -35,8 +36,8 @@ class WanVideoExtenderNative:
                 }),
 
                 # SETTINGS
-                "steps": ("INT", {"default": 20, "min": 1, "max": 100}),
-                "cfg": ("FLOAT", {"default": 6.0, "min": 0.0, "max": 100.0}),
+                "steps": ("INT", {"default": 4, "min": 1, "max": 100}),
+                "cfg": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 100.0}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
                 "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
 
@@ -73,64 +74,93 @@ class WanVideoExtenderNative:
                     "default": "",
                     "tooltip": "Loop 1 LoRA Name (ohne .safetensors, optional über String-Node)."
                 }),
-                "lora_strength_1": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_1": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_1": ("IMAGE", {
                     "tooltip": "Optionales Bild / Bilder für Loop 1. Wenn gesetzt, wird hier ein harter Schnitt gemacht und diese Frames als Kontext verwendet (statt vorheriger 16 Frames)."
                 }),
+                "reference_image_1": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 2
                 "prompt_loop_2": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 2 Prompt (leer = Base Prompt)"}),
                 "lora_loop_2": ("STRING", {"default": ""}),
-                "lora_strength_2": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_2": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_2": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 2 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 1"}),
+                "use_overlap_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 1"}),
+                "reference_image_2": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 3
                 "prompt_loop_3": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 3 Prompt (leer = Base Prompt)"}),
                 "lora_loop_3": ("STRING", {"default": ""}),
-                "lora_strength_3": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_3": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_3": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 3 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 2"}),
+                "use_overlap_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 2"}),
+                "reference_image_3": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
+                
 
                 # LOOP 4
                 "prompt_loop_4": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 4 Prompt (leer = Base Prompt)"}),
                 "lora_loop_4": ("STRING", {"default": ""}),
-                "lora_strength_4": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_4": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_4": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 4 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 3"}),
+                "use_overlap_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 3"}),
+                "reference_image_4": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 5
                 "prompt_loop_5": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 5 Prompt (leer = Base Prompt)"}),
                 "lora_loop_5": ("STRING", {"default": ""}),
-                "lora_strength_5": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_5": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_5": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 5 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 4"}),
+                "use_overlap_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 4"}),
+                "reference_image_5": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 6
                 "prompt_loop_6": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 6 Prompt (leer = Base Prompt)"}),
                 "lora_loop_6": ("STRING", {"default": ""}),
-                "lora_strength_6": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_6": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_6": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 6 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 5"}),
+                "use_overlap_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 5"}),
+                "reference_image_6": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 7
                 "prompt_loop_7": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 7 Prompt (leer = Base Prompt)"}),
                 "lora_loop_7": ("STRING", {"default": ""}),
-                "lora_strength_7": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_7": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_7": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 7 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 6"}),
+                "use_overlap_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 6"}),
+                "reference_image_7": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 8
                 "prompt_loop_8": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 8 Prompt (leer = Base Prompt)"}),
                 "lora_loop_8": ("STRING", {"default": ""}),
-                "lora_strength_8": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_8": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_8": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 8 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 7"}),
+                "use_overlap_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 7"}),
+                "reference_image_8": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 9
                 "prompt_loop_9": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 9 Prompt (leer = Base Prompt)"}),
                 "lora_loop_9": ("STRING", {"default": ""}),
-                "lora_strength_9": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_9": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_9": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 9 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 8"}),
+                "use_overlap_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 8"}),
+                "reference_image_9": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 10
                 "prompt_loop_10": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 10 Prompt (leer = Base Prompt)"}),
                 "lora_loop_10": ("STRING", {"default": ""}),
-                "lora_strength_10": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "lora_strength_10": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_10": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 10 (harte Schnitt-Quelle)."}),
+                "use_reference_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 9"}),
+                "use_overlap_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 9"}),
+                "reference_image_10": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
             }
         }
 
@@ -138,6 +168,15 @@ class WanVideoExtenderNative:
     RETURN_NAMES = ("full_video", "used_prompts")
     FUNCTION = "extend_video"
     CATEGORY = "WanCustom"
+    
+    def _safe_float(self, x, default=1.0):
+        try:
+            return float(x)
+        except:
+            return default
+
+
+    
 
     def _normalize_frame(self, frame: torch.Tensor) -> torch.Tensor:
         """Normalize frame to [H, W, 3] in range 0-1"""
@@ -456,6 +495,39 @@ class WanVideoExtenderNative:
         image_loop_8=None,
         image_loop_9=None,
         image_loop_10=None,
+        # Loop Reference Toggles
+        use_reference_loop_1=False,
+        use_reference_loop_2=False,
+        use_reference_loop_3=False,
+        use_reference_loop_4=False,
+        use_reference_loop_5=False,
+        use_reference_loop_6=False, 
+        use_reference_loop_7=False,
+        use_reference_loop_8=False,
+        use_reference_loop_9=False,
+        use_reference_loop_10=False,
+         # Loop Overlap Toggles
+        use_overlap_loop_1=False,
+        use_overlap_loop_2=False,
+        use_overlap_loop_3=False,
+        use_overlap_loop_4=False,
+        use_overlap_loop_5=False,
+        use_overlap_loop_6=False,
+        use_overlap_loop_7=False,
+        use_overlap_loop_8=False,
+        use_overlap_loop_9=False,
+        use_overlap_loop_10=False,
+        #Loop reference_image
+        reference_image_1=None,
+        reference_image_2=None,
+        reference_image_3=None,
+        reference_image_4=None,
+        reference_image_5=None,
+        reference_image_6=None,
+        reference_image_7=None,
+        reference_image_8=None,
+        reference_image_9=None,
+        reference_image_10=None,
     ):
 
         print("\n" + "=" * 60)
@@ -501,6 +573,35 @@ class WanVideoExtenderNative:
             image_loop_9,
             image_loop_10,
         ]
+        
+        loop_use_reference = [
+            use_reference_loop_1, use_reference_loop_2, use_reference_loop_3,
+            use_reference_loop_4, use_reference_loop_5, use_reference_loop_6,
+            use_reference_loop_7, use_reference_loop_8, use_reference_loop_9,
+            use_reference_loop_10,
+        ]
+
+        loop_use_overlap = [
+            use_overlap_loop_1, use_overlap_loop_2, use_overlap_loop_3,
+            use_overlap_loop_4, use_overlap_loop_5, use_overlap_loop_6,
+            use_overlap_loop_7, use_overlap_loop_8, use_overlap_loop_9,
+            use_overlap_loop_10,
+        ]
+        
+        loop_reference_images = [
+            reference_image_1,
+            reference_image_2,
+            reference_image_3,
+            reference_image_4,
+            reference_image_5,
+            reference_image_6,
+            reference_image_7,
+            reference_image_8,
+            reference_image_9,
+            reference_image_10,
+        ]
+
+        
 
         used_prompts_log = []
 
@@ -678,13 +779,41 @@ class WanVideoExtenderNative:
             if len(selected_context_frames) > 0:
                 context_batch = torch.stack(selected_context_frames)
                 context_count = context_batch.shape[0]
-                full_pixels[:context_count] = context_batch
-                full_masks[:context_count] = 0.0
-                print(f"Overlap/context used: {context_count} frame(s)")
+
+                write_context = False
+
+                if loop_idx == 0:
+                    # Im ersten Loop immer schreiben, wenn wir Frames haben (Startbild)
+                    write_context = True 
+                    print(f"🚀 Loop 1: Forcing Input Image injection ({context_count} frames)")
+                elif loop_use_overlap[loop_idx]:
+                    # In späteren Loops auf den User-Switch hören
+                    write_context = True
+                
+                if write_context:
+                    full_pixels[:context_count] = context_batch
+                    full_masks[:context_count] = 0.0 # WICHTIG: Maske auf 0 (Fest), damit es bleibt!
+                    print(f"✅ Context wrote to canvas: {context_count} frames")
+                else:
+                    context_count = 0
+                    print("❌ Context/Overlap disabled for this loop")
+                # --- KORREKTUR ENDE ---
+
+        
             else:
                 context_batch = None
 
             # === VACE LOGIC (mit Reference Image – unverändert) ===
+            # override only if loop has its own ref
+            current_loop_reference = reference_image
+            
+            if loop_reference_images[loop_idx] is not None:
+                current_loop_reference = loop_reference_images[loop_idx]
+                print(f"🎨 Loop {loop_id}: Overriding global reference with local loop image.")
+
+
+            
+            
             vace_latents, vace_masks, trim_latent = self.wan_vace_logic(
                 vae=vae,
                 width=W,
@@ -693,7 +822,7 @@ class WanVideoExtenderNative:
                 strength=strength,
                 control_video=full_pixels,
                 control_masks=full_masks,
-                reference_image=reference_image,
+                reference_image=current_loop_reference,
             )
 
             print(

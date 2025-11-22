@@ -29,4 +29,4 @@ Repository = "https://github.com/Granddyser/wan-video-extender"
 [tool.comfy]
 PublisherId = "granddyser"
 DisplayName = "Wan-video-extender"
-requires-comfyui = ">=1.0.0"
+requires-comfyui = ">=1.1.2"
