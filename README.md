@@ -226,47 +226,6 @@ Load different LoRAs for specific loops (without `.safetensors` extension).
 
 ---
 
-## 💡 Tips & Tricks
-
-### 1. Start Simple
-Test with 1-2 loops first, then scale up.
-
-### 2. Prompt Engineering
-**Good:** "A woman with long black hair and blue eyes, wearing a red jacket, photorealistic, consistent character"
-
-**Bad:** "A woman" (too vague)
-
-### 3. Performance Optimization
-
-**Fast Mode** (testing):
-```
-steps: 4
-overlap_frames: 12
-extension_loops: 2
-sampler: euler_a
-```
-
-**Quality Mode** (final):
-```
-steps: 4-6
-overlap_frames: 20-24
-extension_loops: 5+
-reference_image: Yes
-sampler: euler_a or dpmpp_2m
-```
-
-### 4. Monitor Console Output
-The node provides detailed progress:
-```
-────────────────────────────────────────
-LOOP 2/3
-VRAM: XX.XXGB
-────────────────────────────────────────
-💾 Saved segment 2 to disk
-Memory: Segment saved, keeping overlap frames for next loop
-```
-
----
 
 ## 📝 Parameter Reference
 
