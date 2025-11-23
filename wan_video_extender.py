@@ -780,7 +780,7 @@ class WanVideoExtenderNative:
                 context_batch = torch.stack(selected_context_frames)
                 context_count = context_batch.shape[0]
 
-                write_context = False
+                write_context = True
 
                 if loop_idx == 0:
                     # Im ersten Loop immer schreiben, wenn wir Frames haben (Startbild)
