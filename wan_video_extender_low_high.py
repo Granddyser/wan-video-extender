@@ -993,6 +993,10 @@ class WanVideoExtenderLowHigh:
                     context_frames = combined_tail[-overlap_frames:]
                 else:
                     context_frames = combined_tail
+                
+                del combined_tail, selected_context_frames  
+                gc.collect()
+
             else:
                 # No new frames — keep context as is
                 print(
@@ -1013,38 +1017,40 @@ class WanVideoExtenderLowHigh:
         print("COMPLETE - combining segments from disk")
         print("=" * 60 + "\n")
 
-        final_tensors = []
+        full_video = None
 
-        # 1) If user provided input (image or video), prepend original input segment
+        # 1) If user provided input (image or video), start with that
         if has_initial_input_from_user and original_input_segment_path is not None:
             try:
-                base_tensor = torch.load(
-                    original_input_segment_path, map_location="cpu"
-                )
-                final_tensors.append(base_tensor)
-                print(
-                    f"📥 Loaded original input segment ({base_tensor.shape[0]} frames)"
-                )
+                full_video = torch.load(original_input_segment_path, map_location="cpu")
+                print(f"📥 Loaded original input segment ({full_video.shape[0]} frames)")
             except Exception as e:
                 print(f"⚠ Failed to load original input segment: {e}")
 
-        # 2) Append all generated segments in order
+        # 2) Incremental concatenation - load one segment at a time!
         total_generated = 0
-        for p in segment_paths:
+        for idx, p in enumerate(segment_paths):
             try:
+                print(f"📥 Loading segment {os.path.basename(p)}...")
                 seg = torch.load(p, map_location="cpu")
-                final_tensors.append(seg)
-                total_generated += seg.shape[0]
-                print(
-                    f"📥 Loaded segment {os.path.basename(p)} ({seg.shape[0]} frames)"
-                )
+                seg_frames = seg.shape[0]
+                
+                if full_video is None:
+                    full_video = seg
+                else:
+                    # Concatenate immediately, then delete segment
+                    full_video = torch.cat([full_video, seg], dim=0)
+                    del seg  # ← Free RAM immediately!
+                    gc.collect()
+                
+                total_generated += seg_frames
+                print(f"  ✓ Total frames now: {full_video.shape[0]}")
+                
             except Exception as e:
                 print(f"⚠ Failed to load segment {p}: {e}")
 
-        # 3) If no user input, output besteht nur aus generierten Segmenten
-        if len(final_tensors) > 0:
-            full_video = torch.cat(final_tensors, dim=0)
-        else:
+        # 3) Fallback if nothing was loaded
+        if full_video is None:
             full_video = torch.zeros((1, default_height, default_width, 3))
 
         # Cleanup temp directory
