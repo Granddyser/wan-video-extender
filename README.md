@@ -7,7 +7,7 @@
 * **💡 Transition Tip:** Supports using the target image of the *upcoming* loop as the Reference Image for the *current* loop to create smoother transitions.
 * **📂 New Workflow:** Added an updated workflow example demonstrating these new looping features.
 
-*(Note: "End Frame" support is coming in a future update.)*
+* **(Note: Support for "End Frame" and "High/Low Noise Models" is coming in a future update.)
 ---
 
 ## Extend your WAN 2.2 videos with advanced features: per-loop prompts, LoRA switching, reference images, and smart overlap for maximum character consistency.
