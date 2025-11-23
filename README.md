@@ -1,6 +1,16 @@
 # WAN Video Extender PRO 
 
-**Extend your WAN 2.2 videos with advanced features: per-loop prompts, LoRA switching, reference images, and smart overlap for maximum character consistency.**
+## v1.2.1: VACE Fixes & Per-Loop Control
+
+* **🐛 VACE Logic Fix:** Fixed a critical bug where the Reference Image would overwrite the Input/Start frames. The start context is now correctly injected and protected.
+* **🔄 Per-Loop Control:** You can now set a unique **Reference Image** and toggle **Overlap** individually for every iteration loop.
+* **💡 Transition Tip:** Supports using the target image of the *upcoming* loop as the Reference Image for the *current* loop to create smoother transitions.
+* **📂 New Workflow:** Added an updated workflow example demonstrating these new looping features.
+
+*(Note: "End Frame" support is coming in a future update.)*
+---
+
+## Extend your WAN 2.2 videos with advanced features: per-loop prompts, LoRA switching, reference images, and smart overlap for maximum character consistency.
 
 **NEW:** Memory-optimized architecture with disk-based segment storage - efficient RAM usage even for long videos!
 
