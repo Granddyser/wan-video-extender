@@ -3,8 +3,8 @@
 ![Demo](demo.gif)
 
 ## v1.3.3 
-* **fix for high-low-noise-node
-* **optional endframe für Extender-native-node
+* fix for high-low-noise-node
+* optional endframe für Extender-native-node
 
 ## v1.3.2 - Logic Fixes & Memory Optimization
 
