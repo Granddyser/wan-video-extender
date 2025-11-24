@@ -1,5 +1,7 @@
 # WAN Video Extender PRO
 
+![Demo](demo.gif)
+
 ## v1.3.2 - Logic Fixes & Memory Optimization
 
 * **Memory Fix:** Resolved high RAM usage during final video assembly in both nodes - segments now merge incrementally instead of loading all at once.
@@ -29,7 +31,7 @@
 
 **NEW:** Memory-optimized architecture with disk-based segment storage - efficient RAM usage even for long videos!
 
-![Demo](demo.gif)
+
 
 ---
 
