@@ -78,6 +78,8 @@ class WanVideoExtenderNative:
                 "image_loop_1": ("IMAGE", {
                     "tooltip": "Optionales Bild / Bilder für Loop 1. Wenn gesetzt, wird hier ein harter Schnitt gemacht und diese Frames als Kontext verwendet (statt vorheriger 16 Frames)."
                 }),
+                "use_reference_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 1"}),
+                "use_overlap_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 1"}),
                 "reference_image_1": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 2
@@ -85,8 +87,8 @@ class WanVideoExtenderNative:
                 "lora_loop_2": ("STRING", {"default": ""}),
                 "lora_strength_2": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_2": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 2 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 1"}),
-                "use_overlap_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 1"}),
+                "use_reference_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 2"}),
+                "use_overlap_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 2"}),
                 "reference_image_2": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 3
@@ -94,8 +96,8 @@ class WanVideoExtenderNative:
                 "lora_loop_3": ("STRING", {"default": ""}),
                 "lora_strength_3": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_3": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 3 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 2"}),
-                "use_overlap_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 2"}),
+                "use_reference_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 3"}),
+                "use_overlap_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 3"}),
                 "reference_image_3": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
                 
 
@@ -104,8 +106,8 @@ class WanVideoExtenderNative:
                 "lora_loop_4": ("STRING", {"default": ""}),
                 "lora_strength_4": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_4": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 4 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 3"}),
-                "use_overlap_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 3"}),
+                "use_reference_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 4"}),
+                "use_overlap_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 4"}),
                 "reference_image_4": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 5
@@ -113,8 +115,8 @@ class WanVideoExtenderNative:
                 "lora_loop_5": ("STRING", {"default": ""}),
                 "lora_strength_5": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_5": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 5 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 4"}),
-                "use_overlap_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 4"}),
+                "use_reference_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 5"}),
+                "use_overlap_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 5"}),
                 "reference_image_5": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 6
@@ -122,8 +124,8 @@ class WanVideoExtenderNative:
                 "lora_loop_6": ("STRING", {"default": ""}),
                 "lora_strength_6": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_6": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 6 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 5"}),
-                "use_overlap_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 5"}),
+                "use_reference_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 6"}),
+                "use_overlap_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 6"}),
                 "reference_image_6": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 7
@@ -131,8 +133,8 @@ class WanVideoExtenderNative:
                 "lora_loop_7": ("STRING", {"default": ""}),
                 "lora_strength_7": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_7": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 7 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 6"}),
-                "use_overlap_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 6"}),
+                "use_reference_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 7"}),
+                "use_overlap_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 7"}),
                 "reference_image_7": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 8
@@ -140,8 +142,8 @@ class WanVideoExtenderNative:
                 "lora_loop_8": ("STRING", {"default": ""}),
                 "lora_strength_8": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_8": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 8 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 7"}),
-                "use_overlap_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 7"}),
+                "use_reference_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 8"}),
+                "use_overlap_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 8"}),
                 "reference_image_8": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 9
@@ -149,8 +151,8 @@ class WanVideoExtenderNative:
                 "lora_loop_9": ("STRING", {"default": ""}),
                 "lora_strength_9": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_9": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 9 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 8"}),
-                "use_overlap_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 8"}),
+                "use_reference_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 9"}),
+                "use_overlap_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 9"}),
                 "reference_image_9": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
 
                 # LOOP 10
@@ -158,8 +160,8 @@ class WanVideoExtenderNative:
                 "lora_loop_10": ("STRING", {"default": ""}),
                 "lora_strength_10": ("STRING", {"default": "1.0", "multiline": False}),
                 "image_loop_10": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 10 (harte Schnitt-Quelle)."}),
-                "use_reference_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 9"}),
-                "use_overlap_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 9"}),
+                "use_reference_loop_10": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 10"}),
+                "use_overlap_loop_10": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 10"}),
                 "reference_image_10": ("IMAGE", {"tooltip": "Character Reference für VACE"}),
             }
         }
@@ -803,14 +805,17 @@ class WanVideoExtenderNative:
             else:
                 context_batch = None
 
-            # === VACE LOGIC (mit Reference Image – unverändert) ===
-            # override only if loop has its own ref
-            current_loop_reference = reference_image
-            
+            # === VACE LOGIC (mit Reference Image – korrekt implementiert) ===
+            # Referenz pro Loop
+            current_loop_reference = None
             if loop_reference_images[loop_idx] is not None:
                 current_loop_reference = loop_reference_images[loop_idx]
-                print(f"🎨 Loop {loop_id}: Overriding global reference with local loop image.")
-
+                print(f"🎨 Loop {loop_id}: Using local loop reference image.")
+            elif reference_image is not None and loop_use_reference[loop_idx]:
+                current_loop_reference = reference_image
+                print(f"🎨 Loop {loop_id}: Using global reference image (switch enabled).")
+            else:
+                print(f"🎨 Loop {loop_id}: No reference image used.")
 
             
             
@@ -939,43 +944,43 @@ class WanVideoExtenderNative:
 
             current_seed += 1
 
-        # === FINAL COMBINE FROM DISK SEGMENTS ===
+        # === FINAL COMBINE FROM DISK SEGMENTS (MEMORY OPTIMIZED) ===
         print("\n" + "=" * 60)
         print("COMPLETE - combining segments from disk")
         print("=" * 60 + "\n")
 
-        final_tensors = []
+        full_video = None
 
-        # 1) If user provided input (image or video), prepend original input segment
+        # 1) If user provided input (image or video), load original input segment first
         if has_initial_input_from_user and original_input_segment_path is not None:
             try:
-                base_tensor = torch.load(
-                    original_input_segment_path, map_location="cpu"
-                )
-                final_tensors.append(base_tensor)
-                print(
-                    f"📥 Loaded original input segment ({base_tensor.shape[0]} frames)"
-                )
+                full_video = torch.load(original_input_segment_path, map_location="cpu")
+                print(f"📥 Loaded original input segment ({full_video.shape[0]} frames)")
             except Exception as e:
                 print(f"⚠ Failed to load original input segment: {e}")
 
-        # 2) Append all generated segments in order
+        # 2) Append all generated segments incrementally (memory efficient!)
         total_generated = 0
-        for p in segment_paths:
+        for idx, p in enumerate(segment_paths):
             try:
+                print(f"📥 Loading segment {os.path.basename(p)}...")
                 seg = torch.load(p, map_location="cpu")
-                final_tensors.append(seg)
-                total_generated += seg.shape[0]
-                print(
-                    f"📥 Loaded segment {os.path.basename(p)} ({seg.shape[0]} frames)"
-                )
+                seg_frames = seg.shape[0]
+
+                if full_video is None:
+                    full_video = seg
+                else:
+                    full_video = torch.cat([full_video, seg], dim=0)
+                    del seg  # ⭐ Immediate cleanup!
+                    gc.collect()
+
+                total_generated += seg_frames
+                print(f"  ✓ Total frames now: {full_video.shape[0]}")
             except Exception as e:
                 print(f"⚠ Failed to load segment {p}: {e}")
 
-        # 3) If no user input, output besteht nur aus generierten Segmenten
-        if len(final_tensors) > 0:
-            full_video = torch.cat(final_tensors, dim=0)
-        else:
+        # 3) If no segments at all, create empty fallback
+        if full_video is None:
             full_video = torch.zeros((1, default_height, default_width, 3))
 
         # Cleanup temp directory

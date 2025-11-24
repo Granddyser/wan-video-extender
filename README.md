@@ -1,5 +1,11 @@
 # WAN Video Extender PRO
 
+## v1.3.2 - Logic Fixes & Memory Optimization
+
+* **Memory Fix:** Resolved high RAM usage during final video assembly in both nodes - segments now merge incrementally instead of loading all at once.
+* **Reference Image Logic Fix (Native):** Fixed `use_reference_loop_X` flags not being evaluated correctly - global reference image now properly respects per-loop toggles.
+* **Workflow Updates:** Updated example workflows for both native and high/low-noise nodes.
+
 ## v1.3.0 - High/Low Noise Support (Beta)
 
 * **New Node:** Added `WanVideoExtenderLowHigh` support. You can now use separate High/Low noise diffusion models and LoRAs for more precise control.
@@ -332,4 +338,10 @@ This node is provided as-is for use with ComfyUI and WAN 2.2.
 
 Special thanks to [phr00t](https://github.com/phr00t) for the complete model.
 
+## ☕ Support the Project
 
+Building optimized tools requires deep dives and long hours. I build this because I believe in pushing the boundaries of what's possible locally. If you share that vision, your support helps bridge the gap between a rough experiment and a polished tool for everyone.
+
+<a href="https://www.buymeacoffee.com/granddyser">
+  <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me a Coffee" />
+</a>
