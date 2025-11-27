@@ -3,6 +3,8 @@ import numpy as np
 import comfy.model_management
 import comfy.sample
 import comfy.utils
+import comfy.sd
+import comfy.latent_formats
 import nodes
 import node_helpers
 import folder_paths
@@ -14,9 +16,23 @@ import shutil
 import gc
 
 
+def get_lora_list():
+    """Get list of available LoRAs with 'None' as first option.
+    Always returns at least ['None'] even if no LoRAs are installed.
+    """
+    try:
+        loras = folder_paths.get_filename_list("loras")
+        if loras is None:
+            loras = []
+    except Exception:
+        loras = []
+    return ["None"] + list(loras)
+
+
 class WanVideoExtenderLowHigh:
     @classmethod
     def INPUT_TYPES(s):
+        lora_list = get_lora_list()
         return {
             "required": {
                 "high_noise": ("MODEL",),
@@ -37,7 +53,7 @@ class WanVideoExtenderLowHigh:
                 }),
 
                 # HIGH NOISE SAMPLER
-                "sampler_name_high": (comfy.samplers.KSampler.SAMPLERS, ),
+                "sampler_name_high": (comfy.samplers.KSampler.SAMPLERS,),
                 "scheduler_high": (comfy.samplers.KSampler.SCHEDULERS,),
                 "steps_h": ("INT", {"default": 4, "min": 1, "max": 100}),
                 "start_at_step_h": ("INT", {"default": 0, "min": 0, "max": 10000}),
@@ -45,7 +61,7 @@ class WanVideoExtenderLowHigh:
                 "cfg_h": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 100.0}),
 
                 # LOW NOISE SAMPLER
-                "sampler_name_low": (comfy.samplers.KSampler.SAMPLERS, ),
+                "sampler_name_low": (comfy.samplers.KSampler.SAMPLERS,),
                 "scheduler_low": (comfy.samplers.KSampler.SCHEDULERS,),
                 "steps_l": ("INT", {"default": 4, "min": 1, "max": 100}),
                 "start_at_step_l": ("INT", {"default": 0, "min": 0, "max": 10000}),
@@ -76,103 +92,130 @@ class WanVideoExtenderLowHigh:
                 "reference_image": ("IMAGE", {"tooltip": "Globales Character-Referenzbild für VACE"}),
                 "inpaint_mask": ("MASK",),
 
-                # LOOP 1
+                # LOOP 1: Prompt + LoRA HIGH + LoRA LOW + Image
                 "prompt_loop_1": ("STRING", {
                     "multiline": False,
                     "default": "",
                     "tooltip": "Optionaler Loop-1-Prompt (String-Node anschließen, leer = Base Prompt)."
                 }),
-                "lora_loop_1": ("STRING", {
-                    "default": "",
-                    "tooltip": "Loop 1 LoRA Name (ohne .safetensors, optional über String-Node)."
-                }),
-                "lora_strength_1": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_1": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 1 (None = keine LoRA)"}),
+                "lora_high_strength_1": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_1": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 1 (None = keine LoRA)"}),
+                "lora_low_strength_1": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_1": ("IMAGE", {
                     "tooltip": "Optionales Bild / Bilder für Loop 1. Wenn gesetzt, harter Schnitt: diese Frames als Kontext statt vorheriger 16 Frames."
                 }),
                 "use_reference_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 1"}),
                 "use_overlap_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 1"}),
+                "use_endframe_loop_1": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 1 (VACE Endframe)."}),
                 "reference_image_1": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 1"}),
 
                 # LOOP 2
                 "prompt_loop_2": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 2 Prompt (leer = Base Prompt)"}),
-                "lora_loop_2": ("STRING", {"default": ""}),
-                "lora_strength_2": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_2": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 2 (None = keine LoRA)"}),
+                "lora_high_strength_2": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_2": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 2 (None = keine LoRA)"}),
+                "lora_low_strength_2": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_2": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 2 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 2"}),
                 "use_overlap_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 2"}),
+                "use_endframe_loop_2": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 2 (VACE Endframe)."}),
                 "reference_image_2": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 2"}),
 
                 # LOOP 3
                 "prompt_loop_3": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 3 Prompt (leer = Base Prompt)"}),
-                "lora_loop_3": ("STRING", {"default": ""}),
-                "lora_strength_3": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_3": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 3 (None = keine LoRA)"}),
+                "lora_high_strength_3": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_3": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 3 (None = keine LoRA)"}),
+                "lora_low_strength_3": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_3": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 3 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 3"}),
                 "use_overlap_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 3"}),
+                "use_endframe_loop_3": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 3 (VACE Endframe)."}),
                 "reference_image_3": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 3"}),
 
                 # LOOP 4
                 "prompt_loop_4": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 4 Prompt (leer = Base Prompt)"}),
-                "lora_loop_4": ("STRING", {"default": ""}),
-                "lora_strength_4": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_4": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 4 (None = keine LoRA)"}),
+                "lora_high_strength_4": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_4": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 4 (None = keine LoRA)"}),
+                "lora_low_strength_4": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_4": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 4 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 4"}),
                 "use_overlap_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 4"}),
+                "use_endframe_loop_4": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 4 (VACE Endframe)."}),
                 "reference_image_4": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 4"}),
 
                 # LOOP 5
                 "prompt_loop_5": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 5 Prompt (leer = Base Prompt)"}),
-                "lora_loop_5": ("STRING", {"default": ""}),
-                "lora_strength_5": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_5": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 5 (None = keine LoRA)"}),
+                "lora_high_strength_5": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_5": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 5 (None = keine LoRA)"}),
+                "lora_low_strength_5": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_5": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 5 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 5"}),
                 "use_overlap_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 5"}),
+                "use_endframe_loop_5": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 5 (VACE Endframe)."}),
                 "reference_image_5": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 5"}),
 
                 # LOOP 6
                 "prompt_loop_6": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 6 Prompt (leer = Base Prompt)"}),
-                "lora_loop_6": ("STRING", {"default": ""}),
-                "lora_strength_6": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_6": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 6 (None = keine LoRA)"}),
+                "lora_high_strength_6": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_6": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 6 (None = keine LoRA)"}),
+                "lora_low_strength_6": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_6": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 6 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 6"}),
                 "use_overlap_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 6"}),
+                "use_endframe_loop_6": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 6 (VACE Endframe)."}),
                 "reference_image_6": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 6"}),
 
                 # LOOP 7
                 "prompt_loop_7": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 7 Prompt (leer = Base Prompt)"}),
-                "lora_loop_7": ("STRING", {"default": ""}),
-                "lora_strength_7": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_7": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 7 (None = keine LoRA)"}),
+                "lora_high_strength_7": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_7": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 7 (None = keine LoRA)"}),
+                "lora_low_strength_7": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_7": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 7 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 7"}),
                 "use_overlap_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 7"}),
+                "use_endframe_loop_7": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 7 (VACE Endframe)."}),
                 "reference_image_7": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 7"}),
 
                 # LOOP 8
                 "prompt_loop_8": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 8 Prompt (leer = Base Prompt)"}),
-                "lora_loop_8": ("STRING", {"default": ""}),
-                "lora_strength_8": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_8": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 8 (None = keine LoRA)"}),
+                "lora_high_strength_8": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_8": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 8 (None = keine LoRA)"}),
+                "lora_low_strength_8": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_8": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 8 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 8"}),
                 "use_overlap_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 8"}),
+                "use_endframe_loop_8": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 8 (VACE Endframe)."}),
                 "reference_image_8": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 8"}),
 
                 # LOOP 9
                 "prompt_loop_9": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 9 Prompt (leer = Base Prompt)"}),
-                "lora_loop_9": ("STRING", {"default": ""}),
-                "lora_strength_9": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_9": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 9 (None = keine LoRA)"}),
+                "lora_high_strength_9": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_9": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 9 (None = keine LoRA)"}),
+                "lora_low_strength_9": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_9": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 9 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 9"}),
                 "use_overlap_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 9"}),
+                "use_endframe_loop_9": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 9 (VACE Endframe)."}),
                 "reference_image_9": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 9"}),
 
                 # LOOP 10
                 "prompt_loop_10": ("STRING", {"multiline": False, "default": "", "tooltip": "Loop 10 Prompt (leer = Base Prompt)"}),
-                "lora_loop_10": ("STRING", {"default": ""}),
-                "lora_strength_10": ("STRING", {"default": "1.0", "multiline": False}),
+                "lora_high_loop_10": (lora_list, {"tooltip": "LoRA für HIGH noise model Loop 10 (None = keine LoRA)"}),
+                "lora_high_strength_10": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
+                "lora_low_loop_10": (lora_list, {"tooltip": "LoRA für LOW noise model Loop 10 (None = keine LoRA)"}),
+                "lora_low_strength_10": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "image_loop_10": ("IMAGE", {"tooltip": "Optionales Bild / Bilder für Loop 10 (harte Schnitt-Quelle)."}),
                 "use_reference_loop_10": ("BOOLEAN", {"default": False, "tooltip": "Use global reference image for Loop 10"}),
                 "use_overlap_loop_10": ("BOOLEAN", {"default": False, "tooltip": "Use overlap context for Loop 10"}),
+                "use_endframe_loop_10": ("BOOLEAN", {"default": False, "tooltip": "Nutze Bild(er) des nächsten Loops als Endframe für Loop 10 (falls vorhanden, sonst ignoriert)."}),
                 "reference_image_10": ("IMAGE", {"tooltip": "Character-Referenz nur für Loop 10"}),
             }
         }
@@ -263,13 +306,28 @@ class WanVideoExtenderLowHigh:
 
         return None
 
+    def _is_lora_none(self, lora_name):
+        """Check if LoRA is set to None/disabled. 
+        Handles None, empty strings, 'None' text, and missing values gracefully.
+        """
+        if lora_name is None:
+            return True
+        if not isinstance(lora_name, str):
+            try:
+                lora_name = str(lora_name)
+            except Exception:
+                return True
+        lora_str = lora_name.strip().lower()
+        return lora_str in ("", "none", "null", "disabled", "off")
+
     def _load_lora(self, model, clip, lora_name, strength_model, strength_clip):
-        """Load LoRA and patch model/clip"""
-        if not lora_name or str(lora_name).strip() == "":
+        """Load LoRA and patch model/clip. Returns original if None selected."""
+        if self._is_lora_none(lora_name):
             return model, clip
 
         try:
             lora_name = str(lora_name)
+            # Add .safetensors if missing
             if not lora_name.endswith(".safetensors"):
                 lora_name = lora_name + ".safetensors"
 
@@ -294,22 +352,17 @@ class WanVideoExtenderLowHigh:
             print(f"⚠ Error loading LoRA {lora_name}: {e}")
             return model, clip
 
-
     def wan_vace_logic(self, vae, width, height, length, strength, control_video, control_masks, reference_image=None):
         """VACE-Logik mit optionalem Referenzbild (Char-Consistency).
 
-        Wichtige Änderung für VRAM-Sparen:
-        - Alle großen Pixel-/Masken-Tensoren bleiben auf CPU.
-        - Nur die komprimierten Latents liegen auf dem Gerät des VAE.
-        Dadurch werden große Allokationen auf der GPU vermieden, insbesondere
-        bei mehreren Loops im gleichen Workflow.
+        VRAM-optimiert:
+        - control_video / mask bleiben auf CPU.
+        - Nur die komprimierten Latents und die fertige Maske landen auf dem VAE-Device.
         """
-        # Eingangs-Video sollte bereits auf CPU liegen (full_pixels / full_masks).
         video_device = control_video.device
 
         base_latent_length = ((length - 1) // 4) + 1
 
-        # Maske auf das gleiche Device/Dtype wie das Video bringen (CPU)
         if control_masks is None:
             mask = torch.ones(
                 (length, height, width, 1),
@@ -326,8 +379,7 @@ class WanVideoExtenderLowHigh:
         inactive_px = (control_video_shifted * (1.0 - mask)) + 0.5
         reactive_px = (control_video_shifted * mask) + 0.5
 
-        # Encodierung mit VAE
-        # Das VAE kümmert sich intern um das richtige Device (GPU/CPU).
+        # Encodierung mit VAE (VAE kümmert sich intern um Device)
         inactive_encoded = vae.encode(inactive_px[:, :, :, :3])
         reactive_encoded = vae.encode(reactive_px[:, :, :, :3])
 
@@ -435,7 +487,6 @@ class WanVideoExtenderLowHigh:
             print(f"Mask with reference padding: {mask_proc.shape}")
 
         mask_proc = mask_proc.unsqueeze(0)
-        # Maske auf dasselbe Device wie die Latents legen (klein, daher VRAM-freundlich)
         mask_proc = mask_proc.to(control_video_latent.device)
 
         print(f"Final mask shape: {mask_proc.shape}")
@@ -485,27 +536,48 @@ class WanVideoExtenderLowHigh:
         prompt_loop_8="",
         prompt_loop_9="",
         prompt_loop_10="",
-        # Loop LoRAs
-        lora_loop_1="",
-        lora_strength_1=1.0,
-        lora_loop_2="",
-        lora_strength_2=1.0,
-        lora_loop_3="",
-        lora_strength_3=1.0,
-        lora_loop_4="",
-        lora_strength_4=1.0,
-        lora_loop_5="",
-        lora_strength_5=1.0,
-        lora_loop_6="",
-        lora_strength_6=1.0,
-        lora_loop_7="",
-        lora_strength_7=1.0,
-        lora_loop_8="",
-        lora_strength_8=1.0,
-        lora_loop_9="",
-        lora_strength_9=1.0,
-        lora_loop_10="",
-        lora_strength_10=1.0,
+        # Loop LoRAs HIGH (Dropdown)
+        lora_high_loop_1="None",
+        lora_high_strength_1=1.0,
+        lora_high_loop_2="None",
+        lora_high_strength_2=1.0,
+        lora_high_loop_3="None",
+        lora_high_strength_3=1.0,
+        lora_high_loop_4="None",
+        lora_high_strength_4=1.0,
+        lora_high_loop_5="None",
+        lora_high_strength_5=1.0,
+        lora_high_loop_6="None",
+        lora_high_strength_6=1.0,
+        lora_high_loop_7="None",
+        lora_high_strength_7=1.0,
+        lora_high_loop_8="None",
+        lora_high_strength_8=1.0,
+        lora_high_loop_9="None",
+        lora_high_strength_9=1.0,
+        lora_high_loop_10="None",
+        lora_high_strength_10=1.0,
+        # Loop LoRAs LOW (Dropdown)
+        lora_low_loop_1="None",
+        lora_low_strength_1=1.0,
+        lora_low_loop_2="None",
+        lora_low_strength_2=1.0,
+        lora_low_loop_3="None",
+        lora_low_strength_3=1.0,
+        lora_low_loop_4="None",
+        lora_low_strength_4=1.0,
+        lora_low_loop_5="None",
+        lora_low_strength_5=1.0,
+        lora_low_loop_6="None",
+        lora_low_strength_6=1.0,
+        lora_low_loop_7="None",
+        lora_low_strength_7=1.0,
+        lora_low_loop_8="None",
+        lora_low_strength_8=1.0,
+        lora_low_loop_9="None",
+        lora_low_strength_9=1.0,
+        lora_low_loop_10="None",
+        lora_low_strength_10=1.0,
         # Loop Images
         image_loop_1=None,
         image_loop_2=None,
@@ -539,6 +611,17 @@ class WanVideoExtenderLowHigh:
         use_overlap_loop_8=False,
         use_overlap_loop_9=False,
         use_overlap_loop_10=False,
+        # Loop Endframe Toggles
+        use_endframe_loop_1=False,
+        use_endframe_loop_2=False,
+        use_endframe_loop_3=False,
+        use_endframe_loop_4=False,
+        use_endframe_loop_5=False,
+        use_endframe_loop_6=False,
+        use_endframe_loop_7=False,
+        use_endframe_loop_8=False,
+        use_endframe_loop_9=False,
+        use_endframe_loop_10=False,
         # Loop reference_image
         reference_image_1=None,
         reference_image_2=None,
@@ -553,7 +636,7 @@ class WanVideoExtenderLowHigh:
     ):
 
         print("\n" + "=" * 60)
-        print("WAN VIDEO EXTENDER high+low-noise (mit Loop-Images & Fix für image_loop_X)")
+        print("WAN VIDEO EXTENDER PRO high+low-noise (Memory Optimized + Endframe)")
         print("=" * 60)
 
         loop_prompts = [
@@ -569,17 +652,18 @@ class WanVideoExtenderLowHigh:
             prompt_loop_10,
         ]
 
+        # (high_name, high_strength, low_name, low_strength)
         loop_loras = [
-            (lora_loop_1, lora_strength_1, lora_strength_1),
-            (lora_loop_2, lora_strength_2, lora_strength_2),
-            (lora_loop_3, lora_strength_3, lora_strength_3),
-            (lora_loop_4, lora_strength_4, lora_strength_4),
-            (lora_loop_5, lora_strength_5, lora_strength_5),
-            (lora_loop_6, lora_strength_6, lora_strength_6),
-            (lora_loop_7, lora_strength_7, lora_strength_7),
-            (lora_loop_8, lora_strength_8, lora_strength_8),
-            (lora_loop_9, lora_strength_9, lora_strength_9),
-            (lora_loop_10, lora_strength_10, lora_strength_10),
+            (lora_high_loop_1, lora_high_strength_1, lora_low_loop_1, lora_low_strength_1),
+            (lora_high_loop_2, lora_high_strength_2, lora_low_loop_2, lora_low_strength_2),
+            (lora_high_loop_3, lora_high_strength_3, lora_low_loop_3, lora_low_strength_3),
+            (lora_high_loop_4, lora_high_strength_4, lora_low_loop_4, lora_low_strength_4),
+            (lora_high_loop_5, lora_high_strength_5, lora_low_loop_5, lora_low_strength_5),
+            (lora_high_loop_6, lora_high_strength_6, lora_low_loop_6, lora_low_strength_6),
+            (lora_high_loop_7, lora_high_strength_7, lora_low_loop_7, lora_low_strength_7),
+            (lora_high_loop_8, lora_high_strength_8, lora_low_loop_8, lora_low_strength_8),
+            (lora_high_loop_9, lora_high_strength_9, lora_low_loop_9, lora_low_strength_9),
+            (lora_high_loop_10, lora_high_strength_10, lora_low_loop_10, lora_low_strength_10),
         ]
 
         loop_images = [
@@ -607,6 +691,13 @@ class WanVideoExtenderLowHigh:
             use_overlap_loop_4, use_overlap_loop_5, use_overlap_loop_6,
             use_overlap_loop_7, use_overlap_loop_8, use_overlap_loop_9,
             use_overlap_loop_10,
+        ]
+
+        loop_use_endframe = [
+            use_endframe_loop_1, use_endframe_loop_2, use_endframe_loop_3,
+            use_endframe_loop_4, use_endframe_loop_5, use_endframe_loop_6,
+            use_endframe_loop_7, use_endframe_loop_8, use_endframe_loop_9,
+            use_endframe_loop_10,
         ]
 
         loop_reference_images = [
@@ -685,33 +776,31 @@ class WanVideoExtenderLowHigh:
                 last_slice = initial_frames[-slice_len:]
                 for i in range(slice_len):
                     frame = self._normalize_frame(last_slice[i])
-                    context_frames.append(frame)
-                H, W = context_frames[0].shape[0], context_frames[0].shape[1]
+                    context_frames.append(frame.cpu())
+
+            if initial_frames.ndim == 4 and initial_frames.shape[-1] == 3:
+                H, W = initial_frames.shape[1], initial_frames.shape[2]
+            elif initial_frames.ndim == 4 and initial_frames.shape[1] == 3:
+                H, W = initial_frames.shape[2], initial_frames.shape[3]
 
             del initial_frames
-            comfy.model_management.soft_empty_cache()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
             gc.collect()
-        else:
-            print(f"⚠ No input - using default {default_height}x{default_width}")
-            default_frame = torch.zeros(
-                (default_height, default_width, 3), dtype=torch.float32
-            )
-            context_frames.append(default_frame)
-            H, W = default_height, default_width
 
+        print(f"Resolution: {W}x{H}")
+        print(f"Initial context frames: {len(context_frames)}")
+
+        current_seed = seed
+
+        # Store base models (for clean LoRA patching each loop)
         base_high_model = high_noise
         base_low_model = low_noise
         base_clip = clip
 
-        current_seed = seed
-
+        # === MAIN LOOP ===
         for loop_idx in range(extension_loops):
             loop_id = loop_idx + 1
 
-            # Nur Cache leeren, keine globalen Modelle entladen,
-            # damit andere Workflows bzw. VACE-Knoten nicht hängen bleiben.
+            # Cleanup before each loop
             comfy.model_management.soft_empty_cache()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
@@ -725,26 +814,45 @@ class WanVideoExtenderLowHigh:
                 )
             print("─" * 60)
 
-            # LoRA pro Loop
-            if loop_idx < len(loop_loras):
-                lora_name, lora_str_model, lora_str_clip = loop_loras[loop_idx]
-                if lora_name and str(lora_name).strip():
-                    lora_str_model = self._safe_float(lora_str_model, 1.0)
-                    lora_str_clip = self._safe_float(lora_str_clip, 1.0)
-                    high_noise, clip = self._load_lora(
-                        base_high_model, base_clip, lora_name, lora_str_model, lora_str_clip
-                    )
-                    low_noise, _ = self._load_lora(
-                        base_low_model, clip, lora_name, lora_str_model, lora_str_clip
-                    )
+            # LoRA pro Loop: separate LORAs für HIGH und LOW model
+            try:
+                if loop_idx < len(loop_loras):
+                    lora_high_name, lora_high_str, lora_low_name, lora_low_str = loop_loras[loop_idx]
+                    
+                    # HIGH noise model LoRA
+                    if not self._is_lora_none(lora_high_name):
+                        lora_high_str = self._safe_float(lora_high_str, 1.0)
+                        high_noise, clip_high = self._load_lora(
+                            base_high_model, base_clip, lora_high_name, lora_high_str, lora_high_str
+                        )
+                        print(f"🎨 Loop {loop_id}: HIGH LoRA '{lora_high_name}' loaded (strength: {lora_high_str})")
+                    else:
+                        high_noise = base_high_model
+                        clip_high = base_clip
+                        print(f"🎨 Loop {loop_id}: No HIGH LoRA (None selected)")
+
+                    # LOW noise model LoRA
+                    if not self._is_lora_none(lora_low_name):
+                        lora_low_str = self._safe_float(lora_low_str, 1.0)
+                        low_noise, clip_low = self._load_lora(
+                            base_low_model, clip_high, lora_low_name, lora_low_str, lora_low_str
+                        )
+                        clip = clip_low  # Use clip from low LoRA patching
+                        print(f"🎨 Loop {loop_id}: LOW LoRA '{lora_low_name}' loaded (strength: {lora_low_str})")
+                    else:
+                        low_noise = base_low_model
+                        clip = clip_high  # Use clip from high LoRA patching (or base if no high lora)
+                        print(f"🎨 Loop {loop_id}: No LOW LoRA (None selected)")
                 else:
                     high_noise = base_high_model
                     low_noise = base_low_model
                     clip = base_clip
-            else:
+            except Exception as e:
+                # LoRA loading failed - continue with base models
                 high_noise = base_high_model
                 low_noise = base_low_model
                 clip = base_clip
+                print(f"⚠️ Loop {loop_id}: LoRA loading failed ({e}), using base models")
 
             loop_prompt_raw = ""
             if loop_idx < len(loop_prompts):
@@ -832,11 +940,52 @@ class WanVideoExtenderLowHigh:
                 if write_context:
                     full_pixels[:context_count] = context_batch
                     full_masks[:context_count] = 0.0  # fixer Kontext
-                    print(f"✅ Context wrote to canvas: {context_count} frames")
+                    print(f"✅ Context written to canvas: {context_count} frames")
                 else:
                     context_count = 0
             else:
                 context_batch = None
+
+            # === ENDFRAME LOGIC (VACE Start-to-End) ===
+            endframe_count = 0
+            if loop_use_endframe[loop_idx]:
+                # Get image from NEXT loop as endframe target
+                next_loop_idx = loop_idx + 1
+                if next_loop_idx < len(loop_images) and loop_images[next_loop_idx] is not None:
+                    endframe_source = loop_images[next_loop_idx]
+                    endframe_frames = self._tensor_to_frame_list(endframe_source)
+                    
+                    if len(endframe_frames) > 0:
+                        # Resize endframes to match current resolution if needed
+                        resized_endframes = []
+                        for ef in endframe_frames:
+                            if ef.shape[0] != H or ef.shape[1] != W:
+                                # Resize using torch interpolate
+                                ef_resized = torch.nn.functional.interpolate(
+                                    ef.permute(2, 0, 1).unsqueeze(0),
+                                    size=(H, W),
+                                    mode='bilinear',
+                                    align_corners=False
+                                ).squeeze(0).permute(1, 2, 0)
+                                resized_endframes.append(ef_resized)
+                            else:
+                                resized_endframes.append(ef)
+                        
+                        endframe_batch = torch.stack(resized_endframes)
+                        endframe_count = min(endframe_batch.shape[0], generate_frames - context_count - 1)
+                        
+                        if endframe_count > 0:
+                            # Place endframes at the END of full_pixels
+                            end_start_idx = generate_frames - endframe_count
+                            full_pixels[end_start_idx:] = endframe_batch[:endframe_count]
+                            full_masks[end_start_idx:] = 0.0
+                            print(f"🎯 Loop {loop_id}: Endframe enabled - using {endframe_count} frame(s) from Loop {next_loop_idx + 1} as target")
+                        else:
+                            print(f"⚠️ Loop {loop_id}: Endframe requested but no space left after context")
+                    else:
+                        print(f"⚠️ Loop {loop_id}: Endframe enabled but next loop has no valid image")
+                else:
+                    print(f"⚠️ Loop {loop_id}: Endframe enabled but no image connected to Loop {next_loop_idx + 1}")
 
             # Referenz pro Loop
             current_loop_reference = None
@@ -936,6 +1085,7 @@ class WanVideoExtenderLowHigh:
             )
             new_samples = low_sample[0]["samples"]
 
+            # Trim reference frames if present
             if trim_latent > 0:
                 new_samples = new_samples[:, :, trim_latent:, :, :]
 
@@ -954,14 +1104,20 @@ class WanVideoExtenderLowHigh:
                 torch.cuda.empty_cache()
             gc.collect()
 
+            # === ADD FRAMES AS DISK SEGMENT (ONLY NEW PART, Kontext + Endframes überspringen) ===
             skip_count = context_count
+            end_trim = endframe_count  # Trim endframes from output
             new_frames_list = []
-            for j in range(skip_count, decoded.shape[0]):
+            frame_end_idx = decoded.shape[0] - end_trim
+            for j in range(skip_count, frame_end_idx):
                 frame = self._normalize_frame(decoded[j]).cpu()
                 new_frames_list.append(frame)
 
             new_frames = len(new_frames_list)
-            print(f"✓ New frames this loop (without overlap/context): {new_frames}")
+            if end_trim > 0:
+                print(f"✓ New frames this loop: {new_frames} (skipped {skip_count} start, {end_trim} end)")
+            else:
+                print(f"✓ New frames this loop (without overlap/context): {new_frames}")
 
             if new_frames > 0:
                 segment_tensor = torch.stack(new_frames_list)
@@ -973,6 +1129,8 @@ class WanVideoExtenderLowHigh:
                 except Exception as e:
                     print(f"⚠ Failed to save segment {loop_id}: {e}")
 
+                # Update context for next loop:
+                # letzte overlap_frames aus [Kontext dieses Loops + neuen Frames]
                 combined_tail = selected_context_frames + new_frames_list
                 if len(combined_tail) > overlap_frames:
                     context_frames = combined_tail[-overlap_frames:]
@@ -989,12 +1147,14 @@ class WanVideoExtenderLowHigh:
 
             current_seed += 1
 
+        # === FINAL COMBINE FROM DISK SEGMENTS (MEMORY OPTIMIZED) ===
         print("\n" + "=" * 60)
         print("COMPLETE - combining segments from disk")
         print("=" * 60 + "\n")
 
         full_video = None
 
+        # 1) If user provided input (image or video), load original input segment first
         if has_initial_input_from_user and original_input_segment_path is not None:
             try:
                 full_video = torch.load(original_input_segment_path, map_location="cpu")
@@ -1002,6 +1162,7 @@ class WanVideoExtenderLowHigh:
             except Exception as e:
                 print(f"⚠ Failed to load original input segment: {e}")
 
+        # 2) Append all generated segments incrementally (memory efficient!)
         total_generated = 0
         for idx, p in enumerate(segment_paths):
             try:
@@ -1013,7 +1174,7 @@ class WanVideoExtenderLowHigh:
                     full_video = seg
                 else:
                     full_video = torch.cat([full_video, seg], dim=0)
-                    del seg
+                    del seg  # ⭐ Immediate cleanup!
                     gc.collect()
 
                 total_generated += seg_frames
@@ -1021,9 +1182,11 @@ class WanVideoExtenderLowHigh:
             except Exception as e:
                 print(f"⚠ Failed to load segment {p}: {e}")
 
+        # 3) If no segments at all, create empty fallback
         if full_video is None:
             full_video = torch.zeros((1, default_height, default_width, 3))
 
+        # Cleanup temp directory
         try:
             shutil.rmtree(segment_dir)
             print(f"🧹 Cleaned temp dir: {segment_dir}")
@@ -1038,5 +1201,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "WanVideoExtenderLowHigh": "Wan 2.2 Video Extender high+low-noise"
+    "WanVideoExtenderLowHigh": "Wan 2.2 Video Extender PRO high+low-noise"
 }

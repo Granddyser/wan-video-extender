@@ -2,6 +2,14 @@
 
 ![Demo](demo.gif)
 
+⚠️ Yes, I know this node looks like a high-rise building on your canvas. It's a skyscraper. But I built it this way because I'd rather give you a luxury high-rise of functionality than a sprawling slum of spaghetti wires.
+
+**[Update v2.0]:** Added Memory-Optimized disk caching (infinite length support), VACE Endframe guidance, per-loop Image/Reference injection, and a new High/Low Noise Extender node.
+## 🚀 Latest Update: Memory Optimization & Endframe Control
+* **True High/Low LoRA Support:** The High/Low Noise node now features dedicated, independent LoRA slots for both model stages, giving you granular control over the diffusion process.
+
+* **Enhanced Loop Controls:** Per-loop support for **Hard Cuts** (Image Injection), **Reference Images** (Character Consistency), and distinct LoRA patching.
+
 ## v1.3.3 
 * fix for high-low-noise-node
 * optional endframe für Extender-native-node
